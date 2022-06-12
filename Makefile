@@ -1,10 +1,10 @@
 CC = gcc
 CFLAGS = -Wall -Werror -O2
 
-tar: main.o options.o createoptionfns.o lz77.o tree.o bitio.o
-		$(CC) $(CFLAGS) -o tar main.o options.o createoptionfns.o lz77.o tree.o bitio.o -lm
+tar: main.o options.o createoptionfns.o bitfilecreation.o lz77.o tree.o bitio.o
+		$(CC) $(CFLAGS) -o tar main.o options.o createoptionfns.o bitfilecreation.o lz77.o tree.o bitio.o -lm
 	
-main.o: main.c bitio.h lz77.h 
+main.o: main.c 
 		$(CC) $(CFLAGS) -c main.c
 
 options.o: options.c options.h
@@ -12,6 +12,9 @@ options.o: options.c options.h
 
 createoptionfns.o: createoptionfns.c createoptionfns.h
 		$(CC) $(CFLAGS) -c createoptionfns.c
+
+bitfilecreation.o: bitfilecreation.c bitfilecreation.h bitio.h lz77.h
+		$(CC) $(CFLAGS) -c bitfilecreation.c
 
 lz77.o: lz77.c bitio.h tree.h
 		$(CC) $(CFLAGS) -c lz77.c

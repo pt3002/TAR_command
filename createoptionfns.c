@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "createoptionfns.h"
+#include "bitfilecreation.h"
 
 void copyingfiles(char *source_file,char *filename){
     char ch;
@@ -97,8 +98,19 @@ void listOFDirectoryFiles(char *path){
                 }
                 //printf("%s\n",currentfile);
 
-
+                char *bitfilename;
+                bitfilename = (char *)malloc(sizeof(char)*(strlen(dir->d_name)));
+                for(i=0; i<strlen(dir->d_name);i++){
+                    if(dir->d_name[i] != '.'){
+                        bitfilename[i] = dir->d_name[i];
+                        //printf("%c--",dir->d_name[i]);
+                    }
+                    else
+                        break;
+                }
+                //printf("%s---%s---\n",dir->d_name,bitfilename);
                 copyingfiles(currentfile,dir->d_name);
+                bitfilecreation(bitfilename,dir->d_name);
                 free(currentfile);
             }
         }

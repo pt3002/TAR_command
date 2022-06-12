@@ -8,11 +8,7 @@
 #include "createoptionfns.h"
 #include "bitio.h"
 #include "lz77.h"
-
-#define MIN_LA_SIZE 2       /* min lookahead size */
-#define MAX_LA_SIZE 255     /* max lookahead size */
-#define MIN_SB_SIZE 0       /* min search buffer size */
-#define MAX_SB_SIZE 65535   /* max search buffer size */
+#include "bitfilecreation.h"
 
 //Function to find out whether path entered is a file or folder
 int is_regular_file(const char *path){
@@ -23,7 +19,7 @@ int is_regular_file(const char *path){
 
 int main(int argc, char *argv[]){
 
-    int la_size = -1, sb_size = -1; /* default size */
+    
 
     /*If number of arguments less than 3
     First arg - ./tar , second arg - to create/extract/list , third arg - file or folder name*/
@@ -59,17 +55,7 @@ int main(int argc, char *argv[]){
 
                     //printf("%s\n",filename);
                     copyingfiles(argv[2], filename);
-                    FILE *b;
-                    b = fopen(bitfilename,"w");
-                    fclose(b);
-                    //printf("%s\n",bitfilename);
-                    FILE *file = NULL;
-                    struct bitFILE *bitF = NULL;
-                    file = fopen(filename, "rb");
-                    bitF = bitIO_open(bitfilename, BIT_IO_W);
-                    encode(file, bitF, la_size, sb_size);
-                    fclose(file);
-                    bitIO_close(bitF);
+                    bitfilecreation(bitfilename, filename);
                 }
 
                 else{
