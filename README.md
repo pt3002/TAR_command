@@ -7,7 +7,8 @@ The Linux TAR stands for tape archive, it is used to create Archive, extract the
 ```
 
 ### Modes of TAR Command
-![Tar_command_flowchart](https://user-images.githubusercontent.com/87142754/173244747-e8106ed1-14c8-4a17-9ab3-4c9ebe4910a5.png)
+![Tar_command_flowchart](https://user-images.githubusercontent.com/87142754/173245644-d58cb71d-d826-48e4-9392-ff56e6259d44.png)
+
 
 ### Example of all commands
 * Create an Archive for a folder
