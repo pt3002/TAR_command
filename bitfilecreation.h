@@ -5,3 +5,4 @@
 
 void bitfilecreation(char *bitfilename, char *filename);
 void bitfileextraction(char *bitfilename, char *filename);
+void decodingfn(char *d);

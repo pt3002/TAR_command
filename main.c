@@ -20,8 +20,6 @@ int is_regular_file(const char *path){
 
 int main(int argc, char *argv[]){
 
-    
-
     /*If number of arguments less than 3
     First arg - ./tar , second arg - to create/extract/list , third arg - file or folder name*/
     if(argc < 3){
@@ -69,7 +67,7 @@ int main(int argc, char *argv[]){
             }
 
             else if(selected_option.opts_t && !selected_option.opts_c && !selected_option.opts_x && !selected_option.opts_d){
-                printf("List files in tar file option activated!\n");
+                printf("List of files in tar file option activated!\n");
                 char *tar = getFileNameFromPath(argv[2]);
                 int i;
                 
@@ -108,7 +106,13 @@ int main(int argc, char *argv[]){
                 }
                 else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
                     printf("This is a compressed tar file\n");
-                    extractFilesFromArchive(tar,1);
+                    char **l = extractFilesFromArchive(tar,1);
+                    int i = 0;
+                    while(l[i][0]!='\0'){
+                        decodingfn(l[i]);
+                        //printf("%s--\n",l[i]);
+                        i+=1;
+                    }
                 }
                 else{
                     printf("Please enter a tar file");
@@ -119,22 +123,7 @@ int main(int argc, char *argv[]){
             else if(!selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t && selected_option.opts_d){
                 printf("Decoding option activated!\n");
                 char *d = getFileNameFromPath(argv[2]);
-                char *out;
-                out = (char *)malloc(sizeof(char)*(strlen(d)+4));
-                int i=strlen(d);
-                memcpy(out,d,strlen(d));
-                out[i] = '.';
-                out[i+1] = 't';
-                out[i+2] = 'x';
-                out[i+3] = 't';
-                printf("File successfully decoded in %s\n",out);
-                FILE *filename;
-                filename = fopen(out,"w+");
-                struct bitFILE *bitF = NULL;
-                bitF = bitIO_open(d, BIT_IO_R);
-                decode(bitF,filename);
-                bitIO_close(bitF);
-                fclose(filename);
+                decodingfn(d);
 
             }
 

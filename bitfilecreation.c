@@ -24,6 +24,7 @@ void bitfilecreation(char *bitfilename, char *filename){
     encode(file, bitF, la_size, sb_size);
     fclose(file);
     bitIO_close(bitF);    
+    return;
 }
 
 void bitfileextraction(char *bitfilename, char *filename){
@@ -34,4 +35,27 @@ void bitfileextraction(char *bitfilename, char *filename){
     decode(bitF, file);
     fclose(file);
     bitIO_close(bitF);
+    return;
+}
+
+void decodingfn(char *d){
+    char *out = NULL;
+    out = (char *)malloc(sizeof(char)*(strlen(d)+4));
+    int i=strlen(d);
+    memcpy(out,d,strlen(d));
+    out[i] = '.';
+    out[i+1] = 't';
+    out[i+2] = 'x';
+    out[i+3] = 't';
+    out[i+4] = '\0';
+    printf("File successfully decoded in %s\n",out);
+    FILE *filename;
+    filename = fopen(out,"w+");
+    struct bitFILE *bitF = NULL;
+    bitF = bitIO_open(d, BIT_IO_R);
+    decode(bitF,filename);
+    bitIO_close(bitF);
+    free(out);
+    fclose(filename);
+    return;
 }

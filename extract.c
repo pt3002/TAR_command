@@ -1,6 +1,7 @@
 #include "extract.h"
 #include "bitio.h"
 #include "lz77.h"
+#include "bitfilecreation.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -59,7 +60,13 @@ void listofFilesinArchive(char *tar){
    fclose(fp);
 }
 
-void extractFilesFromArchive(char *tarFile,int var) {
+char** extractFilesFromArchive(char *tarFile,int var) {
+
+    char **l = (char **) malloc(10 * sizeof(char*));
+    int i;
+    for (int i =0 ; i < 10; ++i)
+        l[i] = (char *) malloc(20 * sizeof(char));
+    i = 0;
 
     FILE *fp = fopen(tarFile, "rb");
 
@@ -68,10 +75,12 @@ void extractFilesFromArchive(char *tarFile,int var) {
 
     if (fp == NULL) {
         printf("can not open tar file!");
-        return;
+        return NULL;
     }
 
-    char name[100];
+    char *name;
+    name = NULL;
+    name = (char *)malloc(sizeof(char)*(100));
     int fileSize;
     long int offset = 0;
 
@@ -84,6 +93,9 @@ void extractFilesFromArchive(char *tarFile,int var) {
         fseek(fp, offset, SEEK_SET); /*Point to position that we need*/
         if(fread(name, 1, 100, fp)){
             file = fopen(name, "wb");
+            //printf("%s",name);
+            memcpy(l[i], name,strlen(name));
+            i+=1;
 
             /*Add content to a new file*/
 
@@ -93,31 +105,11 @@ void extractFilesFromArchive(char *tarFile,int var) {
 
             size_t bytes = fread( buffer, 1, fileSize, fp );
             fwrite( buffer, 1, bytes, file);
-            if(var==1){
-                struct bitFILE *bitF = NULL;
-                bitF = bitIO_open(name, BIT_IO_R);
-                FILE* decodedfile;
-                char *out;
-                out = (char *)malloc(sizeof(char)*(strlen(name)+4));
-                int i=strlen(name);
-                memcpy(out,name,strlen(name));
-                out[i] = '.';
-                out[i+1] = 't';
-                out[i+2] = 'x';
-                out[i+3] = 't';
-                decodedfile = fopen(out, "w+");
-                decode(bitF, decodedfile);
-                bitIO_close(bitF);
-                fclose(decodedfile);
-                //printf("%s\n",out);
-                remove(name);
-                free(out);
-            }
 
             free(buffer);
-
+            free(name);
             fclose(file);
-
+            //remove(file);
             offset = offset + 512 + fileSize; /*Offset to the next file in tar file*/
         }
         else{
@@ -128,6 +120,6 @@ void extractFilesFromArchive(char *tarFile,int var) {
 
     }
 
-
+    return l;
     fclose(fp);
 }
