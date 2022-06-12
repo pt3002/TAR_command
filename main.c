@@ -79,23 +79,13 @@ int main(int argc, char *argv[]){
                     }
                 }
                 //printf("%ld--%d",strlen(tar),i+6);
-                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
                     printf("This is not a compressed tar file\n");
                     listofFilesinArchive(tar);
                 }
-                else if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+6)==(strlen(tar)) && tar[i+4]=='g' && tar[i+5]=='z'){
+                else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
                     printf("This is a compressed tar file\n");
-                    char *decodedtarfile;
-                    decodedtarfile = (char *) malloc(sizeof(char)*strlen(tar));
-                    memcpy(decodedtarfile, tar, strlen(tar));
-                    decodedtarfile[strlen(tar)-2] = '\0';
-                    printf("%s",decodedtarfile);
-                    //printf("%s",decodedtarfile);
-                    FILE *fp;
-                    fp  = fopen (decodedtarfile, "w+");
-                    fclose(fp);
-                    bitfileextraction(tar,decodedtarfile);
-                    listofFilesinArchive(decodedtarfile);
+                    listofFilesinArchive(tar);
                 }
                 else{
                     printf("Please enter a tar file");
@@ -112,8 +102,13 @@ int main(int argc, char *argv[]){
                         break;
                     }
                 }
-                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r'){
-                    extractFilesFromArchive(tar);
+                if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                    printf("This is not a compressed tar file\n");
+                    extractFilesFromArchive(tar,0);
+                }
+                else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                    printf("This is a compressed tar file\n");
+                    extractFilesFromArchive(tar,1);
                 }
                 else{
                     printf("Please enter a tar file");

@@ -3,4 +3,4 @@
 
 void listofFilesinArchive(char *tar);
 int sizeOfFile(FILE *fp, long int offset);
-void extractFilesFromArchive(char *tarFile);
+void extractFilesFromArchive(char *tarFile, int var);

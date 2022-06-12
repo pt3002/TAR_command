@@ -1,5 +1,8 @@
 #include "extract.h"
+#include "bitio.h"
+#include "lz77.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 int sizeOfFile(FILE *fp, long int offset){
@@ -56,7 +59,7 @@ void listofFilesinArchive(char *tar){
    fclose(fp);
 }
 
-void extractFilesFromArchive(char *tarFile) {
+void extractFilesFromArchive(char *tarFile,int var) {
 
     FILE *fp = fopen(tarFile, "rb");
 
@@ -90,6 +93,26 @@ void extractFilesFromArchive(char *tarFile) {
 
             size_t bytes = fread( buffer, 1, fileSize, fp );
             fwrite( buffer, 1, bytes, file);
+            if(var==1){
+                struct bitFILE *bitF = NULL;
+                bitF = bitIO_open(name, BIT_IO_R);
+                FILE* decodedfile;
+                char *out;
+                out = (char *)malloc(sizeof(char)*(strlen(name)+4));
+                int i=strlen(name);
+                memcpy(out,name,strlen(name));
+                out[i] = '.';
+                out[i+1] = 't';
+                out[i+2] = 'x';
+                out[i+3] = 't';
+                decodedfile = fopen(out, "w+");
+                decode(bitF, decodedfile);
+                bitIO_close(bitF);
+                fclose(decodedfile);
+                //printf("%s\n",out);
+                remove(name);
+                free(out);
+            }
 
             free(buffer);
 
