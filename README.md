@@ -40,6 +40,7 @@ Note : After this commands two tar files are created. Datasets.tar is original t
 ### Steps to implement the command on Linux OS
 1. Clone the repository
 ```sh
+git clone "https://github.com/pt3002/TAR_command"
 ```
 2. At the project root run:
 ```sh
