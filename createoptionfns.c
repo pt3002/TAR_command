@@ -102,6 +102,26 @@ void listOFDirectoryFiles(char *path){
                 free(currentfile);
             }
         }
+
+        //Compressing tar file;
+        char *compressed_tarfile;
+        //printf("%s--%ld",tarfilename,strlen(tarfilename));
+        compressed_tarfile = (char *)malloc(sizeof(char)*(20));
+        //printf("%ld",sizeof(compressed_tarfile));
+        int i;
+        for(i = 0; i<strlen(tarfilename);i++){
+            if(tarfilename[i+1]=='.'){
+                compressed_tarfile[i] = tarfilename[i];
+                break;
+            }
+            else{
+                compressed_tarfile[i] = tarfilename[i];
+            }
+        }
+        compressed_tarfile[i+1] = '_';
+        compressed_tarfile[i+2] = 'c';
+        //printf("%s",compressed_tarfile);
+        bitfilecreation(compressed_tarfile,tarfilename);
         closedir(d);
     }
 
