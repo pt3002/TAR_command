@@ -158,3 +158,46 @@ int bitIO_write(struct bitFILE *bitF, void *info, int nbit){
 	return i;
 }
 
+int bitIO_read(struct bitFILE *bitF, void *info, int info_s, int nbit){
+
+	int i;
+	int byte_pos = 0, bit_pos = 0; /* byte's position and bit's position */
+	unsigned char mask; /* mask of bits */
+
+	/* errors handler */
+	if(bitF == NULL || bitF->file == NULL || bitF->mode != BIT_IO_R || info == NULL || info_s <= 0 || nbit < 0)
+		return -1;
+
+	/* clear the 'info' buffer */
+	memset(info, 0, info_s);
+    
+	/* begin the reading */
+	for(i=0; i<nbit && (bitIO_feof(bitF) != 1); i++)
+	{
+		/* get bit to read */
+		mask = 1 << bitF->bitpos;
+        
+        /* if it is a 1 set it, otherwise do nothing */
+		if((bitF->buffer[bitF->bytepos] & mask) != 0)
+			*(unsigned char *)(info + byte_pos) |= (1 << bit_pos);
+        
+		/* update buffers */
+        /* update info to write variables */
+		byte_pos = (bit_pos < 7)? byte_pos : (byte_pos + 1);
+		bit_pos = (bit_pos < 7)? (bit_pos + 1) : 0;
+        
+        /* update bitF structure */
+		bitF->bytepos = (bitF->bitpos < 7)? bitF->bytepos : (bitF->bytepos + 1);
+		bitF->bitpos = (bitF->bitpos <7)? (bitF->bitpos + 1) : 0;
+
+		/* check if it read all bits from the file and, if it is the case, 
+           it reads new bytes from the file */
+		if(bitF->bytepos == BIT_IO_BUFFER)
+			read_buffer(bitF);
+		/* check for reading errors */
+		if(bitIO_ferror(bitF) != 0)
+			break;
+	}
+
+	return i;
+}

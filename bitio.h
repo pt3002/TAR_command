@@ -9,3 +9,4 @@ int bitIO_ferror(struct bitFILE *bitF);
 struct bitFILE* bitIO_open(const char *path, int mode);
 int bitIO_close(struct bitFILE *bitF);
 int bitIO_write(struct bitFILE *bitF, void *info, int nbit);
+int bitIO_read(struct bitFILE *bitF, void *info, int info_s, int nbit);

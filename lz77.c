@@ -116,3 +116,79 @@ void writecode(struct token t, struct bitFILE *out, int la_size, int sb_size)
     bitIO_write(out, &t.len, bitof(la_size));
     bitIO_write(out, &t.next, 8);
 }
+
+void decode(struct bitFILE *file, FILE *out)
+{
+    /* variables */
+    struct token t;
+    int back = 0, off;
+    unsigned char *buffer;
+    int SB_SIZE, LA_SIZE, WINDOW_SIZE;
+    
+    /* read header */
+    bitIO_read(file, &SB_SIZE, sizeof(SB_SIZE), MAX_BIT_BUFFER);
+    bitIO_read(file, &LA_SIZE, sizeof(LA_SIZE), MAX_BIT_BUFFER);
+    
+    WINDOW_SIZE = (SB_SIZE * N) + LA_SIZE;
+    
+    buffer = (unsigned char*)calloc(WINDOW_SIZE, sizeof(unsigned char));
+    
+    while(1)
+    {
+        /* read the code from the input file */
+        t = readcode(file, LA_SIZE, SB_SIZE);
+
+        if(t.off == -1)
+            break;
+        
+        if(back + t.len > WINDOW_SIZE - 1){
+            memcpy(buffer, &(buffer[back - SB_SIZE]), SB_SIZE);
+            back = SB_SIZE;
+        }
+        
+        /* reconstruct the original byte*/
+        while(t.len > 0)
+        {
+            off = back - t.off;
+            buffer[back] = buffer[off];
+            
+            /* write the byte in the output file*/
+            putc(buffer[back], out);
+            
+            back++;
+            t.len--;
+        }
+        buffer[back] = t.next;
+        
+        /* write the byte in the output file*/
+        putc(buffer[back], out);
+        
+        back++;
+    }
+    
+}
+
+struct token readcode(struct bitFILE *file, int la_size, int sb_size)
+{
+	/* variables */
+	struct token t;
+	int ret = 0;
+
+	ret += bitIO_read(file, &t.off, sizeof(t.off), bitof(sb_size));
+	ret += bitIO_read(file, &t.len, sizeof(t.len), bitof(la_size));
+	ret += bitIO_read(file, &t.next, sizeof(t.next), 8);
+		
+	/* check for EOF or ERR */	
+	if(ret < (bitof(sb_size) + bitof(la_size) + 8)){
+		/* ERR */		
+		if(bitIO_ferror(file) != 0)
+		{
+			perror("Error reading bits.\n");
+			exit(EXIT_FAILURE);
+		}
+		/* EOF */
+		t.off = -1;
+	}
+
+	return t;
+}

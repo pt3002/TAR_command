@@ -6,4 +6,5 @@ struct token{
 };
 
 void writecode(struct token t, struct bitFILE *out, int la_size, int sb_size);
-
+void decode(struct bitFILE *file, FILE *out);
+struct token readcode(struct bitFILE *file, int la_size, int sb_size);

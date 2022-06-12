@@ -31,13 +31,13 @@ int main(int argc, char *argv[]){
 
     else{
 
-        /*-c to create, -x to extract, -t to list*/
+        /*-c to create, -x to extract, -t to list, -d to decode a file*/
         char *options = getOptions(argc, argv);
         if(options){
 
             opts selected_option = get_options(options);
 
-            if(selected_option.opts_c && !selected_option.opts_t && !selected_option.opts_x){
+            if(selected_option.opts_c && !selected_option.opts_t && !selected_option.opts_x && !selected_option.opts_d){
                 printf("Create file option activated!\n");
 
                 if(is_regular_file(argv[2])){
@@ -57,6 +57,7 @@ int main(int argc, char *argv[]){
                     //printf("%s\n",filename);
                     copyingfiles(argv[2], filename);
                     bitfilecreation(bitfilename, filename);
+                    remove(filename);
                 }
 
                 else{
@@ -67,17 +68,34 @@ int main(int argc, char *argv[]){
                 }
             }
 
-            else if(selected_option.opts_t && !selected_option.opts_c && !selected_option.opts_x){
+            else if(selected_option.opts_t && !selected_option.opts_c && !selected_option.opts_x && !selected_option.opts_d){
                 printf("List files in tar file option activated!\n");
                 char *tar = getFileNameFromPath(argv[2]);
                 int i;
+                
                 for(i = 0; i<strlen(tar);i++){
                     if(tar[i] == '.'){
                         break;
                     }
                 }
-                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r'){
+                //printf("%ld--%d",strlen(tar),i+6);
+                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                    printf("This is not a compressed tar file\n");
                     listofFilesinArchive(tar);
+                }
+                else if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+6)==(strlen(tar)) && tar[i+4]=='g' && tar[i+5]=='z'){
+                    printf("This is a compressed tar file\n");
+                    char *decodedtarfile;
+                    decodedtarfile = (char *) malloc(sizeof(char)*strlen(tar));
+                    memcpy(decodedtarfile, tar, strlen(tar));
+                    decodedtarfile[strlen(tar)-2] = '\0';
+                    printf("%s",decodedtarfile);
+                    //printf("%s",decodedtarfile);
+                    FILE *fp;
+                    fp  = fopen (decodedtarfile, "w+");
+                    fclose(fp);
+                    bitfileextraction(tar,decodedtarfile);
+                    listofFilesinArchive(decodedtarfile);
                 }
                 else{
                     printf("Please enter a tar file");
@@ -85,7 +103,7 @@ int main(int argc, char *argv[]){
                 }
             }
 
-            else if(selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t){
+            else if(selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t && !selected_option.opts_d){
                 printf("Extract files option activated!\n");
                 char *tar = getFileNameFromPath(argv[2]);
                 int i;
@@ -101,6 +119,28 @@ int main(int argc, char *argv[]){
                     printf("Please enter a tar file");
                     return 0;
                 }
+            }
+
+            else if(!selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t && selected_option.opts_d){
+                printf("Decoding option activated!\n");
+                char *d = getFileNameFromPath(argv[2]);
+                char *out;
+                out = (char *)malloc(sizeof(char)*(strlen(d)+4));
+                int i=strlen(d);
+                memcpy(out,d,strlen(d));
+                out[i] = '.';
+                out[i+1] = 't';
+                out[i+2] = 'x';
+                out[i+3] = 't';
+                printf("File successfully decoded in %s\n",out);
+                FILE *filename;
+                filename = fopen(out,"w+");
+                struct bitFILE *bitF = NULL;
+                bitF = bitIO_open(d, BIT_IO_R);
+                decode(bitF,filename);
+                bitIO_close(bitF);
+                fclose(filename);
+
             }
 
             else{

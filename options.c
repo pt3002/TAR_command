@@ -7,6 +7,7 @@ void init_options(opts *o){
     o -> opts_c = 0;
     o -> opts_t = 0;
     o -> opts_x = 0;
+    o -> opts_d = 0;
     // initialising all options to 0 i.e. false
 }
 
@@ -54,6 +55,9 @@ opts get_options(char *o){
                 break;
             case 'x':
                 options.opts_x = 1;
+                break;
+            case 'd':
+                options.opts_d = 1;
                 break;
         }
     }

@@ -5,3 +5,4 @@
 #define MAX_SB_SIZE 65535   /* max search buffer size */
 
 void bitfilecreation(char *bitfilename, char *filename);
+void bitfileextraction(char *bitfilename, char *filename);

@@ -25,3 +25,13 @@ void bitfilecreation(char *bitfilename, char *filename){
     fclose(file);
     bitIO_close(bitF);    
 }
+
+void bitfileextraction(char *bitfilename, char *filename){
+    FILE *file = NULL;
+    struct bitFILE *bitF = NULL;
+    file = fopen(filename, "w");
+    bitF = bitIO_open(bitfilename, BIT_IO_R);
+    decode(bitF, file);
+    fclose(file);
+    bitIO_close(bitF);
+}

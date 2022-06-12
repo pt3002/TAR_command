@@ -69,18 +69,30 @@ void listOFDirectoryFiles(char *path){
     char *directory = getFileNameFromPath(path);
     //printf("%s\n",directory);
     char *tarfilename;
+    char *compressed_tarfile;
+    compressed_tarfile = (char *)malloc(sizeof(char)*(strlen(directory)+6));
     tarfilename = (char *)malloc(sizeof(char)*(strlen(directory)+4));
     memcpy(tarfilename,directory,strlen(directory));
+    memcpy(compressed_tarfile,directory,strlen(directory));
     int i = strlen(directory);
     tarfilename[i] = '.';
     tarfilename[i+1] = 't';
     tarfilename[i+2] = 'a';
     tarfilename[i+3] = 'r';
-    //printf("%s\n",tarfilename);
+
+    compressed_tarfile[i] = '_';
+    compressed_tarfile[i+1] = 'c';
+    compressed_tarfile[i+2] = '.';
+    compressed_tarfile[i+3] = 't';
+    compressed_tarfile[i+4] = 'a';
+    compressed_tarfile[i+5] = 'r';
+    printf("%s\n",compressed_tarfile);
 
     //CREATING NEW TAR FILE
     FILE *fp;
     fp  = fopen (tarfilename, "w+");
+    FILE *fpc;
+    fpc = fopen(compressed_tarfile,"w+");
     //printf("Directory - %s\n",dirname);
     //printf("\n");
     if(d){
@@ -98,38 +110,34 @@ void listOFDirectoryFiles(char *path){
                 }
                 //printf("%s\n",currentfile);
                 copyingfiles(currentfile,dir->d_name);
+                char *bitfilename;
+                bitfilename = (char *)malloc(sizeof(char)*20);
+                for(i=0; i<strlen(dir->d_name);i++){
+                    if(dir->d_name[i] != '.')
+                        bitfilename[i] = dir->d_name[i];
+                    else
+                        break;
+                }
+                //printf("%s\n",bitfilename);
+                bitfilecreation(bitfilename,dir->d_name);
+                addToTar(fpc,bitfilename);
                 addToTar(fp,dir->d_name);
+                remove(dir->d_name);
+                remove(bitfilename);
+                free(bitfilename);
                 free(currentfile);
             }
         }
-
-        //Compressing tar file;
-        char *compressed_tarfile;
-        //printf("%s--%ld",tarfilename,strlen(tarfilename));
-        compressed_tarfile = (char *)malloc(sizeof(char)*(20));
-        //printf("%ld",sizeof(compressed_tarfile));
-        int i;
-        for(i = 0; i<strlen(tarfilename);i++){
-            if(tarfilename[i+1]=='.'){
-                compressed_tarfile[i] = tarfilename[i];
-                break;
-            }
-            else{
-                compressed_tarfile[i] = tarfilename[i];
-            }
-        }
-        compressed_tarfile[i+1] = '_';
-        compressed_tarfile[i+2] = 'c';
-        //printf("%s",compressed_tarfile);
-        bitfilecreation(compressed_tarfile,tarfilename);
         closedir(d);
     }
 
     if(d == NULL){
         printf("INVALID INPUT");
+        fclose(fpc);
         fclose(fp);
         return;
     }
+    fclose(fpc);
     fclose(fp);
     return;
 }
