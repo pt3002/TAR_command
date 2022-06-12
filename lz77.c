@@ -8,15 +8,33 @@
 #define DEFAULT_LA_SIZE 15      /* lookahead size */
 #define DEFAULT_SB_SIZE 4095    /* search buffer size */
 #define N 3
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "bitio.h"
+#include "tree.h"
+
+#define DEFAULT_LA_SIZE 15      /* lookahead size */
+#define DEFAULT_SB_SIZE 4095    /* search buffer size */
+#define N 3
 #define MAX_BIT_BUFFER 16
-struct token match(bt tree, int root, unsigned char *window, int la, int la_size);
+
+struct token{
+    int off, len;
+    char next;
+};
+
+void writecode(struct token t, struct bitFILE *out, int la_size, int sb_size);
+struct token readcode(struct bitFILE *file, int la_size, int sb_size);
+
+struct token match(struct node *tree, int root, unsigned char *window, int la, int la_size);
 
 void encode(FILE *file, struct bitFILE *out, int la, int sb)
 {
     /* variables */
     int i, root = -1;
     int eof;
-    bt tree;
+    struct node *tree;
     struct token t;
     unsigned char *window;
     int la_size, sb_size = 0;    /* actual lookahead and search buffer size */
@@ -24,15 +42,16 @@ void encode(FILE *file, struct bitFILE *out, int la, int sb)
     int sb_index = 0, la_index = 0;
     int LA_SIZE, SB_SIZE, WINDOW_SIZE;
     
+    /* set window parameters */
     LA_SIZE = (la == -1) ? DEFAULT_LA_SIZE : la;
     SB_SIZE = (sb == -1) ? DEFAULT_SB_SIZE : sb;
     WINDOW_SIZE = (SB_SIZE * N) + LA_SIZE;
     
     window = calloc(WINDOW_SIZE, sizeof(unsigned char));
     
-
-    createTree(SB_SIZE, &tree);
+    tree = createTree(SB_SIZE);
     
+    /* write header */
     bitIO_write(out, &SB_SIZE, MAX_BIT_BUFFER);
     bitIO_write(out, &LA_SIZE, MAX_BIT_BUFFER);
     
@@ -59,9 +78,14 @@ void encode(FILE *file, struct bitFILE *out, int la, int sb)
         /* read as many bytes as matched in the previuos iteration */
         for(i = 0; i < t.len + 1; i++){
             
+            /* if search buffer's length is max, the oldest node is removed from the tree */
+            if(sb_size == SB_SIZE){
+                delete(tree, &root, window, sb_index, SB_SIZE);
+                sb_index++;
+            }else
+                sb_size++;
             
-            sb_size++;
-            
+            /* insert a new node in the tree */
             insert(tree, &root, window, la_index, la_size, SB_SIZE);
             la_index++;
             
@@ -70,11 +94,13 @@ void encode(FILE *file, struct bitFILE *out, int la, int sb)
                 if (sb_index == SB_SIZE * (N - 1)){
                     memmove(window, &(window[sb_index]), sb_size+la_size);
                     
+                    /* update the node's offset when the buffer is scrolled */
                     updateOffset(tree, sb_index, SB_SIZE);
                     
                     sb_index = 0;
                     la_index = sb_size;
                     
+                    /* read from file */
                     buff_size += fread(&(window[sb_size+la_size]), 1, WINDOW_SIZE-(sb_size+la_size), file);
                     if(ferror(file)) {
                         printf("Error loading the data in the window.\n");
@@ -89,32 +115,9 @@ void encode(FILE *file, struct bitFILE *out, int la, int sb)
             la_size = (buff_size > LA_SIZE) ? LA_SIZE : buff_size;
         }
 	}
+    
     destroyTree(tree);
     free(window);
-}
-
-struct token match(struct node *tree, int root, unsigned char *window, int la, int la_size)
-{
-    /* variables */
-    struct token t;
-    struct ret r;
-    
-    /* find the longest match */
-    r = find(tree, root, window, la, la_size);
-    
-    /* create the token */
-    t.off = r.off;
-    t.len = r.len;
-    t.next = window[la+r.len];
-    
-    return t;
-}
-
-void writecode(struct token t, struct bitFILE *out, int la_size, int sb_size)
-{
-    bitIO_write(out, &t.off, bitof(sb_size));
-    bitIO_write(out, &t.len, bitof(la_size));
-    bitIO_write(out, &t.next, 8);
 }
 
 void decode(struct bitFILE *file, FILE *out)
@@ -166,6 +169,31 @@ void decode(struct bitFILE *file, FILE *out)
         back++;
     }
     
+}
+
+struct token match(struct node *tree, int root, unsigned char *window, int la, int la_size)
+{
+    /* variables */
+    struct token t;
+    struct ret r;
+    
+    /* find the longest match */
+    r = find(tree, root, window, la, la_size);
+    
+    /* create the token */
+    t.off = r.off;
+    t.len = r.len;
+    t.next = window[la+r.len];
+    
+    return t;
+}
+
+void writecode(struct token t, struct bitFILE *out, int la_size, int sb_size)
+{
+
+    bitIO_write(out, &t.off, bitof(sb_size));
+    bitIO_write(out, &t.len, bitof(la_size));
+    bitIO_write(out, &t.next, 8);
 }
 
 struct token readcode(struct bitFILE *file, int la_size, int sb_size)

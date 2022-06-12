@@ -1,25 +1,34 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "tree.h"
 
-void createTree(int size, bt *binaryarray)
+struct node{
+    int len, off;
+    int parent;
+    int left, right;
+};
+
+struct node *createTree(int size)
 {
-    bt tree = calloc(size, sizeof(node));
-    *binaryarray = tree;
-    return;
+    struct node *tree = calloc(size, sizeof(struct node));
+    
+    return tree;
 }
 
-void destroyTree(bt tree)
+void destroyTree(struct node *tree)
 {
     free(tree);
 }
 
-void insert(bt tree, int *root, unsigned char *window, int abs_off, int len, int max)
+void insert(struct node *tree, int *root, unsigned char *window, int abs_off, int len, int max)
 {
+    /* variables */
     int i, tmp;
     int off = abs_off % max;    /* from absolute index to relative index (array) */
     
+    /* no root: the new node becomes the root */
     if (*root == -1){
         *root = off;
         tree[*root].parent = -1;
@@ -57,11 +66,9 @@ void insert(bt tree, int *root, unsigned char *window, int abs_off, int len, int
     tree[off].len = len;
     tree[off].left = -1;
     tree[off].right = -1;
-    
 }
 
-
-struct ret find(bt tree, int root, unsigned char *window, int index, int size)
+struct ret find(struct node *tree, int root, unsigned char *window, int index, int size)
 {
     /* variables */
     int i, j;
@@ -97,7 +104,80 @@ struct ret find(bt tree, int root, unsigned char *window, int index, int size)
     return off_len;
 }
 
-void updateOffset(bt tree, int n, int max)
+int minChild(struct node *tree, int index)
+{
+    int min = index;
+    
+    while (tree[min].left != -1)
+        min = tree[min].left;
+    
+    return min;
+}
+
+void delete(struct node *tree, int *root, unsigned char *window, int abs_sb, int max)
+{
+    /* variables */
+    int parent, child, sb;
+    
+    sb = abs_sb % max;  /* from absolute index to relative index (array) */
+    
+    if (tree[sb].left == -1){
+        /* the node to be deleted has not the left child */
+        child = tree[sb].right;
+        if (child != -1)
+            tree[child].parent = tree[sb].parent;
+        parent = tree[sb].parent;
+
+    }else if (tree[sb].right == -1){
+        /* the node to be deleted has not the right child */
+        child = tree[sb].left;
+        tree[child].parent = tree[sb].parent;
+        parent = tree[sb].parent;
+        
+    }else{
+        /* the node to be deleted has both the children: it will be replaced
+           by the minimum child of its right subtree */
+        child = minChild(tree, tree[sb].right);
+        
+        if (tree[child].parent == sb){
+            /* just the left child has to be updated */
+            parent = tree[sb].parent;
+            tree[child].parent = parent;
+            
+        }else{
+            /* also the right child has to be updated */
+            parent = tree[child].parent;
+            tree[parent].left = tree[child].right;
+            if(tree[child].right != -1)
+                tree[tree[child].right].parent = parent;
+        
+            tree[child].right = tree[sb].right;
+            tree[child].parent = tree[sb].parent;
+        
+            if (tree[child].right != -1)
+                tree[tree[child].right].parent = child;
+        
+            parent = tree[child].parent;
+        }
+        
+        tree[child].left = tree[sb].left;
+        if (tree[child].left != -1)
+            tree[tree[child].left].parent = child;
+    }
+    
+    /* set the parent's child or the child as the root */
+    if (parent != -1){
+        if (tree[parent].right == sb){
+            tree[parent].right = child;
+        }else{
+            tree[parent].left = child;
+        }
+    }else
+        *root = child;
+    
+}
+
+void updateOffset(struct node *tree, int n, int max)
 {
     int i;
     
@@ -105,4 +185,16 @@ void updateOffset(bt tree, int n, int max)
         if (tree[i].off != -1)
             tree[i].off -= n;
     }
+}
+
+void printtree(struct node *tree, int root)
+{
+    if (root == -1)
+        return;
+    
+    if (tree[root].left != -1)
+        printtree(tree, tree[root].left);
+    printf("%d\n", tree[root].off);
+    if (tree[root].right != -1)
+        printtree(tree, tree[root].right);
 }
