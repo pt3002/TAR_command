@@ -97,20 +97,8 @@ void listOFDirectoryFiles(char *path){
                     c+=1;
                 }
                 //printf("%s\n",currentfile);
-
-                char *bitfilename;
-                bitfilename = (char *)malloc(sizeof(char)*(strlen(dir->d_name)));
-                for(i=0; i<strlen(dir->d_name);i++){
-                    if(dir->d_name[i] != '.'){
-                        bitfilename[i] = dir->d_name[i];
-                        //printf("%c--",dir->d_name[i]);
-                    }
-                    else
-                        break;
-                }
-                //printf("%s---%s---\n",dir->d_name,bitfilename);
                 copyingfiles(currentfile,dir->d_name);
-                bitfilecreation(bitfilename,dir->d_name);
+                addToTar(fp,dir->d_name);
                 free(currentfile);
             }
         }
@@ -119,7 +107,71 @@ void listOFDirectoryFiles(char *path){
 
     if(d == NULL){
         printf("INVALID INPUT");
+        fclose(fp);
+        return;
     }
     fclose(fp);
     return;
+}
+
+void addToTar(FILE *tarFile, char *file){
+    FILE *new = fopen(file, "rb");                //open the new file for reading
+    if(new == NULL){
+        printf("No such file in directory");
+        return;
+    }
+
+    fseek(tarFile, 0L, SEEK_END);           //size of tar file
+    long int lengthoftarfile = ftell(tarFile); 
+
+    int startHeader = ftell(tarFile);
+
+    /*copying content of new file at the end of tar file*/
+    int contentstart = lengthoftarfile + 512;
+
+    fseek(tarFile, contentstart, SEEK_SET);                    //setting pointer at end of file
+
+    copyFile(new, tarFile, file);
+
+    lengthoftarfile = ftell(tarFile);
+
+    int contentend = lengthoftarfile - contentstart;            //Length of newly inserted content
+
+    /*Adding header before the newly added content in tne 512 bytes space*/
+    struct tarHeader head;
+    
+    /*memset - used to fill a block of memory with a particular value. eg. void *memset(void *ptr, int x, size_t n);*/
+    memset(&head, 0 , sizeof( struct tarHeader));
+
+    getHeaderStats(&head, file, contentend);
+    fseek(tarFile, startHeader, SEEK_SET);
+    fwrite(&head, 1, sizeof(struct tarHeader), tarFile);
+
+    fclose(new);
+
+}
+
+void getHeaderStats (struct tarHeader *head, char *file, int contentend) {
+    struct stat stats;
+    stat(file, &stats);
+    snprintf( head->name, 100, "%s", file );
+    snprintf( head->size, 12, "%d", contentend );
+    snprintf( head->mtime, 12, "%ld ", stats.st_mtime );
+    snprintf( head->mode, 8, "%o ", stats.st_mode );
+}
+
+void copyFile(FILE *new, FILE *tarFile, char *file){
+    /*
+    STAT functions return information about a file, in the buffer pointed to by statbuf.
+    */
+
+    struct stat stats;
+    stat(file, &stats);
+    char *buffer = malloc(sizeof(char));
+    while( !feof(new) ){
+        buffer = (char*)malloc(stats.st_size * sizeof(char));
+        size_t read = fread( buffer, 1, stats.st_size, new );
+        fwrite( buffer, 1, read, tarFile);
+    }
+    free(buffer);
 }

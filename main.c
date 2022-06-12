@@ -9,6 +9,7 @@
 #include "bitio.h"
 #include "lz77.h"
 #include "bitfilecreation.h"
+#include "extract.h"
 
 //Function to find out whether path entered is a file or folder
 int is_regular_file(const char *path){
@@ -68,10 +69,38 @@ int main(int argc, char *argv[]){
 
             else if(selected_option.opts_t && !selected_option.opts_c && !selected_option.opts_x){
                 printf("List files in tar file option activated!\n");
+                char *tar = getFileNameFromPath(argv[2]);
+                int i;
+                for(i = 0; i<strlen(tar);i++){
+                    if(tar[i] == '.'){
+                        break;
+                    }
+                }
+                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r'){
+                    listofFilesinArchive(tar);
+                }
+                else{
+                    printf("Please enter a tar file");
+                    return 0;
+                }
             }
 
             else if(selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t){
                 printf("Extract files option activated!\n");
+                char *tar = getFileNameFromPath(argv[2]);
+                int i;
+                for(i = 0; i<strlen(tar);i++){
+                    if(tar[i] == '.'){
+                        break;
+                    }
+                }
+                if(tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r'){
+                    extractFilesFromArchive(tar);
+                }
+                else{
+                    printf("Please enter a tar file");
+                    return 0;
+                }
             }
 
             else{
