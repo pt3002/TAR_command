@@ -10,6 +10,8 @@
 #include "lz77.h"
 #include "bitfilecreation.h"
 #include "extract.h"
+#include <dirent.h>
+#include <errno.h>
 
 //Function to find out whether path entered is a file or folder
 int is_regular_file(const char *path){
@@ -59,71 +61,102 @@ int main(int argc, char *argv[]){
                 }
 
                 else{
-                    printf("This is a folder\n");
-                    // char *filename = getFileNameFromPath(argv[2]);
-                    // printf("%s\n",filename);
-                    listOFDirectoryFiles(argv[2]);
+
+                    DIR* dir = opendir(argv[2]);
+
+                    if (dir) {
+                        /* Directory exists. */
+                        printf("This is a folder\n");
+                        // char *filename = getFileNameFromPath(argv[2]);
+                        // printf("%s\n",filename);
+                        listOFDirectoryFiles(argv[2]);
+                        closedir(dir);
+                    } else if (ENOENT == errno) {
+                        printf("This path does not exist!\n");
+                        return 0;
+                        /* Directory does not exist. */
+                    } else {
+                        /* opendir() failed for some other reason. */
+                        printf("Error!\n");
+                        return 0;
+                    }
+                    
                 }
             }
 
             else if(selected_option.opts_t && !selected_option.opts_c && !selected_option.opts_x && !selected_option.opts_d){
                 printf("List of files in tar file option activated!\n");
-                char *tar = getFileNameFromPath(argv[2]);
-                int i;
-                
-                for(i = 0; i<strlen(tar);i++){
-                    if(tar[i] == '.'){
-                        break;
+                if(is_regular_file(argv[2])){
+                    char *tar = getFileNameFromPath(argv[2]);
+                    int i;
+                    
+                    for(i = 0; i<strlen(tar);i++){
+                        if(tar[i] == '.'){
+                            break;
+                        }
+                    }
+                    //printf("%ld--%d",strlen(tar),i+6);
+                    if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                        printf("This is not a compressed tar file\n");
+                        listofFilesinArchive(tar);
+                    }
+                    else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                        printf("This is a compressed tar file\n");
+                        listofFilesinArchive(tar);
+                    }
+                    else{
+                        printf("Please enter a tar file");
+                        return 0;
                     }
                 }
-                //printf("%ld--%d",strlen(tar),i+6);
-                if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
-                    printf("This is not a compressed tar file\n");
-                    listofFilesinArchive(tar);
-                }
-                else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
-                    printf("This is a compressed tar file\n");
-                    listofFilesinArchive(tar);
-                }
                 else{
-                    printf("Please enter a tar file");
-                    return 0;
+                    printf("This is not a file\n");
                 }
             }
 
             else if(selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t && !selected_option.opts_d){
                 printf("Extract files option activated!\n");
-                char *tar = getFileNameFromPath(argv[2]);
-                int i;
-                for(i = 0; i<strlen(tar);i++){
-                    if(tar[i] == '.'){
-                        break;
+                if(is_regular_file(argv[2])){
+                    char *tar = getFileNameFromPath(argv[2]);
+                    int i;
+                    for(i = 0; i<strlen(tar);i++){
+                        if(tar[i] == '.'){
+                            break;
+                        }
                     }
-                }
-                if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
-                    printf("This is not a compressed tar file\n");
-                    extractFilesFromArchive(tar,0);
-                }
-                else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
-                    printf("This is a compressed tar file\n");
-                    char **l = extractFilesFromArchive(tar,1);
-                    int i = 0;
-                    while(l[i][0]!='\0'){
-                        decodingfn(l[i]);
-                        //printf("%s--\n",l[i]);
-                        i+=1;
+                    if(tar[i-2]!='_'&& tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                        printf("This is not a compressed tar file\n");
+                        extractFilesFromArchive(tar,0);
+                    }
+                    else if(tar[i-2]=='_' && tar[i-1]=='c' && tar[i+1]=='t' && tar[i+2]=='a' && tar[i+3]=='r' && (i+4)==strlen(tar)){
+                        printf("This is a compressed tar file\n");
+                        char **l = extractFilesFromArchive(tar,1);
+                        int i = 0;
+                        while(l[i][0]!='\0'){
+                            decodingfn(l[i]);
+                            //printf("%s--\n",l[i]);
+                            i+=1;
+                        }
+                    }
+                    else{
+                        printf("Please enter a tar file");
+                        return 0;
                     }
                 }
                 else{
-                    printf("Please enter a tar file");
-                    return 0;
+                    printf("This is not a file\n");
                 }
             }
 
             else if(!selected_option.opts_x && !selected_option.opts_c && !selected_option.opts_t && selected_option.opts_d){
                 printf("Decoding option activated!\n");
-                char *d = getFileNameFromPath(argv[2]);
-                decodingfn(d);
+                if(is_regular_file(argv[2])){
+                    char *d = getFileNameFromPath(argv[2]);
+                    decodingfn(d);
+                }
+                else{
+                    printf("No such file exists!");
+                }
 
             }
 
